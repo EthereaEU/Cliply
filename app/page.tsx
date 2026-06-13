@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { VideoCard } from "@/components/video-card";
-import { IssueModal } from "@/components/issue-modal";
 import { configureURL, checkURL, extractClipID } from "@/lib/utils";
 import { fetchVideoWithoutWatermark } from "@/lib/medal-api";
 import { MedalClip } from "@/types";
@@ -22,7 +21,6 @@ export default function Home() {
   const [cooldown, setCooldown] = React.useState(0);
   const [downloadedIds, setDownloadedIds] = React.useState<Set<string>>(new Set());
   const [error, setError] = React.useState<string | null>(null);
-  const [issueModalOpen, setIssueModalOpen] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
@@ -174,23 +172,25 @@ export default function Home() {
               )}
 
               {clips.length === 0 && !isLoading && (
-                <div className="space-y-6 text-center text-sm text-white/40">
+                <div className="flex items-center justify-center gap-6 text-center text-sm text-white/40">
                   <a
                     href="https://imgur.com/IFMBxNv"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 hover:text-white/60 transition-colors"
+                    className="flex items-center gap-2 hover:text-white/60 transition-colors"
                   >
                     <HelpCircle className="w-4 h-4" />
                     How to get the Medal Link or ID
                   </a>
-                  <button
-                    onClick={() => setIssueModalOpen(true)}
-                    className="inline-flex items-center gap-2 hover:text-white/60 transition-colors"
+                  <a
+                    href="https://github.com/EthereaEU/Cliply/issues"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 hover:text-white/60 transition-colors"
                   >
                     <AlertCircle className="w-4 h-4" />
                     Report an issue
-                  </button>
+                  </a>
                 </div>
               )}
             </CardContent>
@@ -211,7 +211,7 @@ export default function Home() {
       <footer className="fixed bottom-0 left-0 right-0 p-6 flex justify-between items-start text-xs md:text-sm">
         <div className="flex items-center gap-4">
           <a
-            href="https://github.com/Tyson3101/Medal-Bypass"
+            href="https://github.com/EthereaEU/Cliply"
             target="_blank"
             rel="noopener noreferrer"
             className="text-white/40 hover:text-white/60 transition-colors"
@@ -222,8 +222,6 @@ export default function Home() {
         </div>
 
       </footer>
-
-      <IssueModal open={issueModalOpen} onOpenChange={setIssueModalOpen} />
     </div>
   );
 }
