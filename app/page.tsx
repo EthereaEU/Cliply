@@ -22,6 +22,7 @@ export default function Home() {
   const [downloadedIds, setDownloadedIds] = React.useState<Set<string>>(new Set());
   const [error, setError] = React.useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const videosRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -90,6 +91,10 @@ export default function Home() {
       if (video.src) {
         setClips((prev) => [{ id, src: video.src! }, ...prev]);
         setInputValue("");
+        // Auto-scroll to videos section
+        setTimeout(() => {
+          videosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
       }
     } catch {
       setDownloadedIds((prev) => {
@@ -116,7 +121,7 @@ export default function Home() {
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-3xl">
           {/* Hero Section */}
-          <div className={`text-center mb-12 animate-fade-in ${clips.length > 0 ? "hidden" : ""}`}>
+          <div className="text-center mb-8 animate-fade-in">
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-4 bg-gradient-to-r from-white via-white/80 to-white/60 bg-clip-text text-transparent">
               Cliply
             </h1>
@@ -126,7 +131,7 @@ export default function Home() {
           </div>
 
           {/* Input Card */}
-          <Card className={`animate-scale-in ${clips.length > 0 ? "border-0 shadow-none bg-transparent" : ""}`}>
+          <Card className="animate-scale-in">
             <CardContent className="p-6 md:p-8 space-y-6">
               <div className="space-y-4">
                 <Input
@@ -198,7 +203,7 @@ export default function Home() {
 
           {/* Videos Section */}
           {clips.length > 0 && (
-            <div className="mt-8 space-y-8 animate-slide-up">
+            <div ref={videosRef} className="mt-8 space-y-8 animate-slide-up">
               {clips.map((clip) => (
                 <VideoCard key={clip.id} src={clip.src} id={clip.id} />
               ))}

@@ -27,45 +27,70 @@ export async function transcodeToMp3(
 ): Promise<Blob> {
   const ffmpegInstance = await fetchFFmpeg();
 
-  // Fetch the video file
-  const response = await fetch(videoUrl);
-  const videoData = await response.arrayBuffer();
+  // Set up progress callback before any operations
+  let progressInterval: NodeJS.Timeout | null = null;
+  let currentProgress = 0;
 
-  // Write the input file
-  await ffmpegInstance.writeFile("input.mp4", new Uint8Array(videoData));
-
-  // Convert linear volume to dB for FFmpeg
-  // FFmpeg uses dB where 0dB = original volume, positive = boost, negative = reduce
-  const volumeDb = volume === 1 ? 0 : 20 * Math.log10(volume);
-  const volumeFilter = volumeDb === 0 ? "" : `volume=${volumeDb}dB`;
-
-  // Set up progress callback
-  ffmpegInstance.on("progress", ({ progress }) => {
-    if (onProgress) {
+  const progressHandler = ({ progress }: { progress: number }) => {
+    if (onProgress && progress !== undefined) {
+      currentProgress = progress;
       onProgress(progress);
     }
-  });
+  };
 
-  // Convert to MP3 with volume adjustment
-  const command = ["-i", "input.mp4"];
-  
-  if (volumeFilter) {
-    command.push("-af", volumeFilter);
+  ffmpegInstance.on("progress", progressHandler);
+
+  // Fallback: simulate progress if FFmpeg doesn't report it
+  if (onProgress) {
+    progressInterval = setInterval(() => {
+      if (currentProgress < 0.9) {
+        currentProgress += 0.1;
+        onProgress(Math.min(currentProgress, 0.95));
+      }
+    }, 500);
   }
-  
-  command.push("-vn", "-acodec", "libmp3lame", "-q:a", "2", "output.mp3");
 
-  await ffmpegInstance.exec(command);
+  try {
+    // Fetch the video file
+    const response = await fetch(videoUrl);
+    const videoData = await response.arrayBuffer();
 
-  // Read the output file
-  const outputData = await ffmpegInstance.readFile("output.mp3");
+    // Write the input file
+    await ffmpegInstance.writeFile("input.mp4", new Uint8Array(videoData));
 
-  // Clean up
-  await ffmpegInstance.deleteFile("input.mp4");
-  await ffmpegInstance.deleteFile("output.mp3");
+    // Convert linear volume to dB for FFmpeg
+    // FFmpeg uses dB where 0dB = original volume, positive = boost, negative = reduce
+    const volumeDb = volume === 1 ? 0 : 20 * Math.log10(volume);
+    const volumeFilter = volumeDb === 0 ? "" : `volume=${volumeDb}dB`;
 
-  // Create blob from output data - handle type conversion
-  const blob = new Blob([outputData as unknown as BlobPart], { type: "audio/mpeg" });
+    // Convert to MP3 with volume adjustment
+    const command = ["-i", "input.mp4"];
 
-  return blob;
+    if (volumeFilter) {
+      command.push("-af", volumeFilter);
+    }
+
+    command.push("-vn", "-acodec", "libmp3lame", "-q:a", "2", "output.mp3");
+
+    await ffmpegInstance.exec(command);
+
+    // Read the output file
+    const outputData = await ffmpegInstance.readFile("output.mp3");
+
+    // Clean up
+    await ffmpegInstance.deleteFile("input.mp4");
+    await ffmpegInstance.deleteFile("output.mp3");
+
+    // Create blob from output data - handle type conversion
+    const blob = new Blob([outputData as unknown as BlobPart], { type: "audio/mpeg" });
+
+    return blob;
+  } finally {
+    // Clean up progress interval
+    if (progressInterval) {
+      clearInterval(progressInterval);
+    }
+    // Remove event listener
+    ffmpegInstance.off("progress", progressHandler);
+  }
 }
