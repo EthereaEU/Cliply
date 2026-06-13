@@ -66,8 +66,9 @@ export function AudioEditor({ videoSrc, videoId, onBack, onClose }: AudioEditorP
 
           if (isMounted) {
             wavesurferRef.current = ws;
-            // Load the video as audio
-            await ws.load(videoSrc);
+            // Use proxy URL to avoid CORS issues
+            const proxyUrl = `/api/proxy/video?url=${encodeURIComponent(videoSrc)}`;
+            await ws.load(proxyUrl);
           }
         } catch (error) {
           if (error instanceof Error && error.name !== 'AbortError') {
@@ -151,6 +152,12 @@ export function AudioEditor({ videoSrc, videoId, onBack, onClose }: AudioEditorP
       });
 
       setAudioBlob(mp3Blob);
+
+      // Set progress to 100% before downloading
+      setConversionProgress(1);
+
+      // Small delay to ensure UI updates to 100%
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // Download the converted file
       const url = URL.createObjectURL(mp3Blob);

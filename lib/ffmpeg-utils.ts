@@ -51,8 +51,9 @@ export async function transcodeToMp3(
   }
 
   try {
-    // Fetch the video file
-    const response = await fetch(videoUrl);
+    // Fetch the video file through proxy to avoid CORS
+    const proxyUrl = `/api/proxy/video?url=${encodeURIComponent(videoUrl)}`;
+    const response = await fetch(proxyUrl);
     const videoData = await response.arrayBuffer();
 
     // Write the input file
